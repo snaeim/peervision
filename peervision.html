@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PeerVision</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/picocss/1.5.10/pico.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+        }
+
+        header {
+            padding: 0.75rem 0;
+            background-color: var(--primary);
+            color: var(--primary-inverse);
+            margin-bottom: 1.5rem;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-badge {
+            border-radius: 0.7rem;
+            padding: 0.175rem 0.55rem;
+            font-size: 0.675rem;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .status-online {
+            background-color: #10b981;
+            color: white;
+        }
+
+        .status-offline {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .status-disabled {
+            background-color: #9ca3af;
+            color: white;
+        }
+
+        .card {
+            margin-bottom: 0;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            background-color: var(--card-sectionning-background-color);
+            padding: 1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 1.5rem 1rem;
+        }
+
+        .stat-card h3 {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+
+        .stat-card p {
+            margin: 0.5rem 0 0 0;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .peer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        .peer-card {
+            background-color: var(--card-sectionning-background-color);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+        }
+
+        .peer-card h4 {
+            margin-top: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .peer-card dl {
+            margin: 1rem 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .peer-card dt {
+            font-weight: 600;
+            color: #6b7280;
+            font-size: 0.9rem;
+            grid-column: span 1;
+        }
+
+        .peer-card dd {
+            margin-left: 0;
+            margin-bottom: 0.5rem;
+            grid-column: span 1;
+        }
+
+        .peer-card .actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .peer-card .actions button {
+            margin: 0;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+        }
+
+        .peer-card .actions button i {
+            font-size: 1rem;
+        }
+
+        .peer-card .actions button:hover {
+            transform: translateY(-2px);
+            transition: transform 0.2s ease;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: var(--card-sectionning-background-color);
+            margin: 10% auto;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            width: 80%;
+            max-width: 600px;
+        }
+
+        .modal-close {
+            float: right;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: var(--primary);
+        }
+
+        .modal-title {
+            margin-top: 0;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100px;
+        }
+
+        .loading::after {
+            content: "";
+            width: 40px;
+            height: 40px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .qr-code-container {
+            display: flex;
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .export-options {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .export-options button {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            text-align: center;
+        }
+
+        .export-options button i {
+            font-size: 1rem;
+        }
+
+        .export-options button:hover {
+            transform: translateY(-2px);
+            transition: transform 0.2s ease;
+        }
+
+        .export-config {
+            background-color: #f8fafc;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+        }
+
+        .loader {
+            width: 100%;
+            height: 4px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: var(--contrast);
+            animation: loading 2s linear infinite;
+            transform-origin: left;
+            transform: scaleX(0);
+            z-index: 1000;
+        }
+
+        @keyframes loading {
+            0% {
+                transform: scaleX(0);
+            }
+
+            50% {
+                transform: scaleX(0.5);
+            }
+
+            100% {
+                transform: scaleX(1);
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .capitalize {
+            text-transform: capitalize;
+        }
+
+        .floating-add-button {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 50%;
+            background-color: var(--primary);
+            color: white;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            z-index: 100;
+        }
+
+        .floating-add-button i {
+            font-size: 1.2rem;
+        }
+
+        .floating-add-button:hover {
+            transform: scale(1.1);
+            background-color: var(--primary-hover);
+        }
+
+        .peers-header {
+            margin-bottom: 1rem;
+        }
+
+        #qrcode {
+            background-color: #f8fafc;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loader" class="loader hidden"></div>
+
+    <header>
+        <div class="container">
+            <h1>WireGuard PeerVision</h1>
+        </div>
+    </header>
+
+    <main class="container">
+        <div id="error-container" class="hidden">
+            <article>
+                <h2>Error</h2>
+                <p id="error-message"></p>
+                <button id="retry-button">Retry</button>
+            </article>
+        </div>
+
+        <div id="content" class="hidden">
+            <section id="interface">
+                <h2 id="interface-name" class="capitalize">Interface</h2>
+                <div class="stats-grid">
+                    <div class="stat-card card">
+                        <h3><i class="fas fa-calendar-alt"></i> Created</h3>
+                        <p id="created-at">-</p>
+                    </div>
+                    <div class="stat-card card">
+                        <h3><i class="fas fa-clock"></i> Last Updated</h3>
+                        <p id="updated-at">-</p>
+                    </div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card card">
+                        <h3><i class="fas fa-download"></i> Data Received</h3>
+                        <p id="total-rx">-</p>
+                    </div>
+                    <div class="stat-card card">
+                        <h3><i class="fas fa-upload"></i> Data Sent</h3>
+                        <p id="total-tx">-</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="peers-section">
+                <div class="peers-header">
+                    <h2>Peers</h2>
+                </div>
+
+                <div id="peers-container" class="peer-grid">
+                    <div class="loading"></div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Floating Add Button -->
+    <button id="floating-add-button" class="floating-add-button">
+        <i class="fas fa-user-plus"></i>
+    </button>
+
+    <div id="add-peer-modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" id="add-peer-close">
+                <i class="fas fa-times"></i>
+            </span>
+            <h2 class="modal-title">Add New Peer</h2>
+            <form id="add-peer-form">
+                <div class="form-group">
+                    <label for="peer-name">Peer Name</label>
+                    <input type="text" id="peer-name" name="peer-name" required>
+                    <small>Alphanumeric characters, hyphens, and underscores only</small>
+                </div>
+                <div class="form-group">
+                    <button type="submit" id="add-peer-submit">Add Peer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="export-config-modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" id="export-config-close">
+                <i class="fas fa-times"></i>
+            </span>
+            <h2 class="modal-title">Peer Configuration</h2>
+            <div id="export-config-content">
+                <div class="loading"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        // Constants
+        const API_BASE_URL = window.location.origin;
+        const CONNECTION_TIMEOUT_MINUTES = 3; // Define connection timeout threshold
+
+        // DOM Elements
+        const loader = document.getElementById('loader');
+        const errorContainer = document.getElementById('error-container');
+        const errorMessage = document.getElementById('error-message');
+        const retryButton = document.getElementById('retry-button');
+        const content = document.getElementById('content');
+
+        // Interface elements
+        const interfaceName = document.getElementById('interface-name');
+        const createdAt = document.getElementById('created-at');
+        const updatedAt = document.getElementById('updated-at');
+        const totalRx = document.getElementById('total-rx');
+        const totalTx = document.getElementById('total-tx');
+
+        // Peer elements
+        const peersContainer = document.getElementById('peers-container');
+        const floatingAddButton = document.getElementById('floating-add-button');
+        const addPeerModal = document.getElementById('add-peer-modal');
+        const addPeerClose = document.getElementById('add-peer-close');
+        const addPeerForm = document.getElementById('add-peer-form');
+        const addPeerSubmit = document.getElementById('add-peer-submit');
+
+        // Export config elements
+        const exportConfigModal = document.getElementById('export-config-modal');
+        const exportConfigClose = document.getElementById('export-config-close');
+        const exportConfigContent = document.getElementById('export-config-content');
+
+        // State
+        let interfaceData = null;
+
+        // Initialize the application
+        function init() {
+            fetchInterfaceData();
+            setupEventListeners();
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Retry button
+            retryButton.addEventListener('click', fetchInterfaceData);
+
+            // Add peer button (floating)
+            floatingAddButton.addEventListener('click', () => {
+                addPeerModal.style.display = 'block';
+                document.getElementById('peer-name').focus();
+            });
+
+            addPeerClose.addEventListener('click', () => {
+                addPeerModal.style.display = 'none';
+                addPeerForm.reset();
+            });
+
+            window.addEventListener('click', (event) => {
+                if (event.target === addPeerModal) {
+                    addPeerModal.style.display = 'none';
+                    addPeerForm.reset();
+                }
+                if (event.target === exportConfigModal) {
+                    exportConfigModal.style.display = 'none';
+                }
+            });
+
+            // Add peer form
+            addPeerForm.addEventListener('submit', handleAddPeer);
+
+            // Export config modal
+            exportConfigClose.addEventListener('click', () => {
+                exportConfigModal.style.display = 'none';
+            });
+
+            // Scroll observer for floating button
+            const peersSection = document.getElementById('peers-section');
+            const observerOptions = {
+                root: null, // viewport is the root
+                rootMargin: '0px',
+                threshold: 0.1 // trigger when at least 10% of the target is visible
+            };
+
+            const floatingButtonObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    // Only show button if we're connected and the peers section is visible
+                    if (entry.isIntersecting && content.classList.contains('hidden') === false) {
+                        floatingAddButton.style.display = 'flex';
+                    } else {
+                        floatingAddButton.style.display = 'none';
+                    }
+                });
+            }, observerOptions);
+
+            // Start observing the peers section
+            floatingButtonObserver.observe(peersSection);
+        }
+
+        // Helper function to check if a peer is connected based on last handshake
+        function isPeerConnected(lastHandshakeTime) {
+            if (!lastHandshakeTime) return false;
+
+            // Handle "Just now" case
+            if (lastHandshakeTime.toLowerCase() === "just now") {
+                return true;
+            }
+
+            const timeString = lastHandshakeTime.toLowerCase();
+
+            // Check if the string contains longer time units - peer is disconnected
+            if (timeString.includes("hour") ||
+                timeString.includes("day") ||
+                timeString.includes("week") ||
+                timeString.includes("month") ||
+                timeString.includes("year")) {
+                return false;
+            }
+
+            // If only seconds (e.g., "58 seconds ago") - peer is connected
+            if (timeString.includes("second") && !timeString.includes("minute")) {
+                return true;
+            }
+
+            // If minutes are mentioned (e.g., "3 minutes, 24 seconds ago" or "1 minute ago")
+            if (timeString.includes("minute")) {
+                // Extract the number of minutes
+                const minutesMatch = timeString.match(/(\d+)\s*minute/);
+                if (minutesMatch) {
+                    const minutes = parseInt(minutesMatch[1], 10);
+                    return minutes < CONNECTION_TIMEOUT_MINUTES;
+                }
+            }
+
+            // If we couldn't parse it, assume disconnected
+            return false;
+        }
+
+        // Fetch interface data from API
+        async function fetchInterfaceData() {
+            showLoader();
+            errorContainer.classList.add('hidden');
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/interface/show`);
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+
+                interfaceData = await response.json();
+                updateInterface(interfaceData);
+                updatePeers(interfaceData);
+
+                content.classList.remove('hidden');
+
+                // We no longer set the button display here, it's handled by the intersection observer
+                // The observer will check if content is visible and peers section is in viewport
+            } catch (error) {
+                console.error('Error fetching interface data:', error);
+                showError(`Failed to connect to the WireGuard API. Please ensure you're connected to the VPN network.`);
+                content.classList.add('hidden');
+                floatingAddButton.style.display = 'none'; // Hide add button when error occurs
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Update interface with interface data
+        function updateInterface(data) {
+            const interfaceInfo = data.interface;
+
+            interfaceName.textContent = interfaceInfo.name;
+            createdAt.textContent = interfaceInfo.create_at;
+            updatedAt.textContent = interfaceInfo.update_at;
+            totalRx.textContent = interfaceInfo.total_rx;
+            totalTx.textContent = interfaceInfo.total_tx;
+        }
+
+        // Update peers list
+        function updatePeers(data) {
+            const peers = data.peers;
+            peersContainer.innerHTML = '';
+
+            if (!peers || Object.keys(peers).length === 0) {
+                peersContainer.innerHTML = `
+                    <div class="empty-state">
+                        <p>No peers found</p>
+                        <button id="empty-add-peer">
+                            <i class="fas fa-user-plus"></i> Add Your First Peer
+                        </button>
+                    </div>
+                `;
+
+                document.getElementById('empty-add-peer').addEventListener('click', () => {
+                    addPeerModal.style.display = 'block';
+                });
+
+                return;
+            }
+
+            for (const [peerName, peer] of Object.entries(peers)) {
+                const peerCard = document.createElement('div');
+                peerCard.className = 'peer-card card';
+
+                // Determine connection status based on handshake time
+                const isConnected = peer.status === 'enable' && isPeerConnected(peer.latest_handshake);
+
+                const statusClass = peer.status === 'enable'
+                    ? (isConnected ? 'status-online' : 'status-offline')
+                    : 'status-disabled';
+
+                const statusText = peer.status === 'enable'
+                    ? (isConnected ? 'Connected' : 'Disconnected')
+                    : 'Disabled';
+
+                peerCard.innerHTML = `
+                    <h4>
+                        ${peerName}
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </h4>
+                    <dl>
+                        <dt>Data Received</dt>
+                        <dd>${peer.total_rx || '0 B'}</dd>
+                        
+                        <dt>Data Sent</dt>
+                        <dd>${peer.total_tx || '0 B'}</dd>
+                    </dl>
+                    <div class="actions">
+                        <button class="peer-action export-btn" data-peer="${peerName}" title="Export Configuration">
+                            <i class="fas fa-file-export"></i>
+                        </button>
+                        ${peer.status === 'enable'
+                        ? `<button class="peer-action disable-btn contrast" data-peer="${peerName}" title="Disable Peer">
+                            <i class="fas fa-pause"></i>
+                           </button>`
+                        : `<button class="peer-action enable-btn contrast" data-peer="${peerName}" title="Enable Peer">
+                            <i class="fas fa-play"></i>
+                           </button>`
+                    }
+                        <button class="peer-action delete-btn secondary" data-peer="${peerName}" title="Delete Peer">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+
+                peersContainer.appendChild(peerCard);
+            }
+
+            // Add event listeners for peer actions
+            document.querySelectorAll('.export-btn').forEach(btn => {
+                btn.addEventListener('click', () => exportPeerConfig(btn.dataset.peer));
+            });
+
+            document.querySelectorAll('.disable-btn').forEach(btn => {
+                btn.addEventListener('click', () => togglePeerStatus(btn.dataset.peer, 'disable'));
+            });
+
+            document.querySelectorAll('.enable-btn').forEach(btn => {
+                btn.addEventListener('click', () => togglePeerStatus(btn.dataset.peer, 'enable'));
+            });
+
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', () => deletePeer(btn.dataset.peer));
+            });
+        }
+
+        // Handle adding a new peer
+        async function handleAddPeer(event) {
+            event.preventDefault();
+
+            const peerName = document.getElementById('peer-name').value.trim();
+
+            // Simple validation
+            if (!/^[a-zA-Z0-9_-]+$/.test(peerName)) {
+                alert('Peer name can only contain letters, numbers, hyphens, and underscores');
+                return;
+            }
+
+            showLoader();
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/peer/add/${peerName}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to add peer');
+                }
+
+                // Close modal and reset form
+                addPeerModal.style.display = 'none';
+                addPeerForm.reset();
+
+                // Apply configuration
+                await applyConfiguration();
+
+                // Refresh data
+                await fetchInterfaceData();
+
+            } catch (error) {
+                console.error('Error adding peer:', error);
+                alert(`Failed to add peer: ${error.message}`);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Export peer configuration
+        async function exportPeerConfig(peerName) {
+            showLoader();
+            exportConfigContent.innerHTML = '<div class="loading"></div>';
+            exportConfigModal.style.display = 'block';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/peer/export/${peerName}`);
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to export peer config');
+                }
+
+                const data = await response.json();
+
+                exportConfigContent.innerHTML = `
+                    <div class="qr-code-container">
+                        <div id="qrcode"></div>
+                    </div>
+                    <div class="export-config">${data.config}</div>
+                    <div class="export-options">
+                        <button id="download-config">
+                            <i class="fas fa-download"></i> Download Configuration
+                        </button>
+                    </div>
+                `;
+
+                // Generate QR code
+                new QRCode(document.getElementById("qrcode"), {
+                    text: data.config,
+                    width: 200,
+                    height: 200
+                });
+
+                // Add event listener for download option
+                document.getElementById('download-config').addEventListener('click', () => {
+                    const blob = new Blob([data.config], { type: 'application/octet-stream' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${peerName}.conf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                });
+
+            } catch (error) {
+                console.error('Error exporting peer config:', error);
+                exportConfigContent.innerHTML = `
+                    <div class="error-message">
+                        Failed to export peer configuration: ${error.message}
+                    </div>
+                `;
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Toggle peer status (enable/disable)
+        async function togglePeerStatus(peerName, action) {
+            if (!confirm(`Are you sure you want to ${action} peer "${peerName}"?`)) {
+                return;
+            }
+
+            showLoader();
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/peer/${action}/${peerName}`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `Failed to ${action} peer`);
+                }
+
+                // Apply configuration
+                await applyConfiguration();
+
+                // Refresh data
+                await fetchInterfaceData();
+
+            } catch (error) {
+                console.error(`Error ${action}ing peer:`, error);
+                alert(`Failed to ${action} peer: ${error.message}`);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Delete a peer
+        async function deletePeer(peerName) {
+            if (!confirm(`Are you sure you want to delete peer "${peerName}"? This action cannot be undone.`)) {
+                return;
+            }
+
+            showLoader();
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/peer/del/${peerName}`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to delete peer');
+                }
+
+                // Apply configuration
+                await applyConfiguration();
+
+                // Refresh data
+                await fetchInterfaceData();
+
+            } catch (error) {
+                console.error('Error deleting peer:', error);
+                alert(`Failed to delete peer: ${error.message}`);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Apply configuration after changes
+        async function applyConfiguration() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/interface/apply`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to apply configuration');
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('Error applying configuration:', error);
+                throw error;
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            errorContainer.classList.remove('hidden');
+            errorMessage.textContent = message;
+        }
+
+        // Show loader
+        function showLoader() {
+            loader.classList.remove('hidden');
+        }
+
+        // Hide loader
+        function hideLoader() {
+            loader.classList.add('hidden');
+        }
+
+        // Initialize the application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>
